@@ -15,7 +15,7 @@ Original file is located at
 """
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES']='0'
+os.environ['CUDA_VISIBLE_DEVICES']='0,1,2,3'
 
 import fastai
 from fastai import *
@@ -24,15 +24,29 @@ from fastai.callbacks.tensorboard import *
 from fastai.vision.gan import *
 from deoldify.generators import *
 from deoldify.critics import *
-from deoldify.dataset import get_colorize_data, *
+from deoldify.dataset import *
 from deoldify.loss import *
 from deoldify.save import *
 from PIL import Image, ImageDraw, ImageFont
 from PIL import ImageFile
 
+"""## Get GPUs"""
+
+if not torch.cuda.is_available():
+    print('GPU not available.')
+else:
+    try:
+        for i in range(os.environ['CUDA_VISIBLE_DEVICES'].split(',').map(lambda x: int(x))):
+            print(f"cuda:{i} -- {torch.cuda.get_device_name(i)}")
+    except Exception as e:
+        print(e)
+
+
 """## Setup"""
 
-path = Path('../data')
+path = Path(os.environ['DATA_DIR'])
+print(f"path = {path}")
+
 # source colour images
 img_path = path/'imagenet_images'
 path_hr = img_path/'source'
@@ -89,12 +103,6 @@ def save_gen_images():
     save_preds(data_gen.fix_dl)
     PIL.Image.open(path_gen.ls()[0])
 
-"""## Get GPU"""
-
-# if not torch.cuda.is_available():
-#     print('GPU not available.')
-# else:
-print(torch.cuda.get_device_name(0))
 
 """###Create black and white training images (Only runs if the directory isn't already created)"""
 
