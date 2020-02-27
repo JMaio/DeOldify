@@ -262,7 +262,7 @@ class DynamicUnetWide(SequentialEx):
                 norm_type=norm_type,
                 extra_bn=extra_bn,
                 **kwargs
-            ).eval()
+            ).eval().to("cuda:1")
             layers.append(unet_block)
             x = unet_block(x)
 
