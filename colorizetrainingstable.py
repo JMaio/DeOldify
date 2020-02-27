@@ -123,7 +123,7 @@ bs=88
 sz=64
 keep_pct=3.0
 
-data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct, 0)
+data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct, device=0)
 
 #  from generator.py
 GPUtil.showUtilization()
