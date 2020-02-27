@@ -29,6 +29,7 @@ from deoldify.loss import *
 from deoldify.save import *
 from PIL import Image, ImageDraw, ImageFont
 from PIL import ImageFile
+import GPUtil
 
 """## Get GPUs"""
 
@@ -125,7 +126,9 @@ keep_pct=3.0
 data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct)
 
 #  from generator.py
+GPUtil.showUtilization()
 learn_gen = gen_learner_wide(data=data_gen, gen_loss=FeatureLoss(), nf_factor=nf_factor)
+GPUtil.showUtilization()
 
 learn_gen.callback_fns.append(partial(ImageGenTensorboardWriter, base_dir=TENSORBOARD_PATH, name='GenPre'))
 
