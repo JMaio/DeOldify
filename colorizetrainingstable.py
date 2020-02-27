@@ -24,7 +24,7 @@ from fastai.callbacks.tensorboard import *
 from fastai.vision.gan import *
 from deoldify.generators import *
 from deoldify.critics import *
-from deoldify.dataset import *
+from deoldify.dataset import get_colorize_data, *
 from deoldify.loss import *
 from deoldify.save import *
 from PIL import Image, ImageDraw, ImageFont
@@ -55,6 +55,7 @@ nf_factor = 2
 pct_start = 1e-8
 
 def get_data(bs:int, sz:int, keep_pct:float):
+    # from dataset.py
     return get_colorize_data(sz=sz, bs=bs, crappy_path=path_lr, good_path=path_hr, 
                              random_seed=None, keep_pct=keep_pct)
 
@@ -62,7 +63,7 @@ def get_crit_data(classes, bs, sz):
     src = ImageList.from_folder(path, include=classes, recurse=True).split_by_rand_pct(0.1, seed=42)
     ll = src.label_from_folder(classes=classes)
     data = (ll.transform(get_transforms(max_zoom=2.), size=sz)
-           .databunch(bs=bs).normalize(imagenet_stats))
+           .databunch(bs=bs).normalize(imagenet_stats)).to("cuda:1")
     return data
 
 def create_training_images(fn,i):
@@ -115,14 +116,18 @@ keep_pct=3.0
 
 data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct)
 
+#  from generator.py
 learn_gen = gen_learner_wide(data=data_gen, gen_loss=FeatureLoss(), nf_factor=nf_factor)
 
 learn_gen.callback_fns.append(partial(ImageGenTensorboardWriter, base_dir=TENSORBOARD_PATH, name='GenPre'))
 
+# from fast ai learner class
 learn_gen.fit_one_cycle(1, pct_start=0.8, max_lr=slice(1e-3))
 
+# from fast ai learner class
 learn_gen.save(pre_gen_name)
 
+# from fast ai learner class
 learn_gen.unfreeze()
 
 learn_gen.fit_one_cycle(1, pct_start=pct_start,  max_lr=slice(3e-7, 3e-4))
@@ -190,6 +195,7 @@ if old_checkpoint_num == 0:
     learn_gen=None
     gc.collect()
     data_crit = get_crit_data([name_gen, 'test'], bs=bs, sz=sz)
+    print(f"critic data on device: {data_crit.device}")
     data_crit.show_batch(rows=3, ds_type=DatasetType.Train, imgsize=3)
     learn_critic = colorize_crit_learner(data=data_crit, nf=256)
     learn_critic.callback_fns.append(partial(LearnerTensorboardWriter, base_dir=TENSORBOARD_PATH, name='CriticPre'))

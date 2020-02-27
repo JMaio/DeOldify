@@ -53,6 +53,7 @@ def unet_learner_wide(
     "Build Unet learner from `data` and `arch`."
     meta = cnn_config(arch)
     body = create_body(arch, pretrained)
+    # can tell to go to another gpu
     model = to_device(
         DynamicUnetWide(
             body,
