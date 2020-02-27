@@ -69,16 +69,16 @@ TENSORBOARD_PATH = Path('data/tensorboard/' + proj_id)
 nf_factor = 2
 pct_start = 1e-8
 
-def get_data(bs:int, sz:int, keep_pct:float, device:int):
+def get_data(bs:int, sz:int, keep_pct:float):
     # from dataset.py
     return get_colorize_data(sz=sz, bs=bs, crappy_path=path_lr, good_path=path_hr, 
-                             random_seed=None, keep_pct=keep_pct).cuda(device)
+                             random_seed=None, keep_pct=keep_pct)
 
 def get_crit_data(classes, bs, sz):
     src = ImageList.from_folder(path, include=classes, recurse=True).split_by_rand_pct(0.1, seed=42)
     ll = src.label_from_folder(classes=classes)
     data = (ll.transform(get_transforms(max_zoom=2.), size=sz)
-           .databunch(bs=bs).normalize(imagenet_stats)).to("cuda:1")
+           .databunch(bs=bs).normalize(imagenet_stats))
     return data
 
 def create_training_images(fn,i):
@@ -123,7 +123,7 @@ bs=88
 sz=64
 keep_pct=3.0
 
-data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct, device=0)
+data_gen = get_data(bs=bs, sz=sz, keep_pct=keep_pct)
 
 #  from generator.py
 GPUtil.showUtilization()
