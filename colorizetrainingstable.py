@@ -36,7 +36,7 @@ if not torch.cuda.is_available():
     print('GPU not available.')
 else:
     try:
-        for i in range(os.environ['CUDA_VISIBLE_DEVICES'].split(',').map(lambda x: int(x))):
+        for i in range(map(lambda x: int(x), os.environ['CUDA_VISIBLE_DEVICES'].split(','))):
             print(f"cuda:{i} -- {torch.cuda.get_device_name(i)}")
     except Exception as e:
         print(e)
