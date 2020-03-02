@@ -19,11 +19,11 @@ class GANSaveCallback(LearnerCallback):
 
     def on_batch_end(self, iteration: int, epoch: int, **kwargs) -> None:
         if iteration == 0:
-            print(f'self.filename: {self.filename}')
-            print(f'self.save_iters: {self.iters}')
-            print(f'iteration: {iteration}')
-            print(f'epoch: {epoch}')
             return
+#             print(f'self.filename: {self.filename}')
+#             print(f'self.save_iters: {self.iters}')
+#             print(f'iteration: {iteration}')
+#             print(f'epoch: {epoch}')
 
         if iteration % self.save_iters == 0:
             self._save_gen_learner(iteration=iteration, epoch=epoch)
