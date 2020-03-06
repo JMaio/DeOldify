@@ -1,3 +1,4 @@
+from fastai.vision import Learner
 from fastai.vision import *
 from fastai.vision.learner import cnn_config
 from .unet import DynamicUnetWide, DynamicUnetDeep
@@ -20,7 +21,8 @@ def gen_inference_wide(
 
 def gen_learner_wide(
     data: ImageDataBunch, gen_loss, arch=models.resnet101, nf_factor: int = 2, 
-    norm_type: NormType = NormType.Spectral
+    norm_type: NormType = NormType.Spectral,
+    **kwargs
 ) -> Learner:
 # NormType.Spectral from fast ai
     return unet_learner_wide(
@@ -33,6 +35,7 @@ def gen_learner_wide(
         y_range=(-3.0, 3.0),
         loss_func=gen_loss,
         nf_factor=nf_factor,
+        **kwargs,
     )
 
 
