@@ -19,14 +19,16 @@ def gen_inference_wide(
 
 
 def gen_learner_wide(
-    data: ImageDataBunch, gen_loss, arch=models.resnet101, nf_factor: int = 2
+    data: ImageDataBunch, gen_loss, arch=models.resnet101, nf_factor: int = 2, 
+    norm_type: NormType = NormType.Spectral
 ) -> Learner:
+# NormType.Spectral from fast ai
     return unet_learner_wide(
         data,
         arch=arch,
         wd=1e-3,
         blur=True,
-        norm_type=NormType.Spectral,
+        norm_type=norm_type,
         self_attention=True,
         y_range=(-3.0, 3.0),
         loss_func=gen_loss,
@@ -81,11 +83,13 @@ def unet_learner_wide(
 
 # Weights are implicitly read from ./models/ folder
 def gen_inference_deep(
-    root_folder: Path, weights_name: str, arch=models.resnet34, nf_factor: float = 1.5
+    root_folder: Path, weights_name: str, arch=models.resnet34, nf_factor: float = 1.5,
+    norm_type: NormType = NormType.Spectral
 ) -> Learner:
     data = get_dummy_databunch()
     learn = gen_learner_deep(
-        data=data, gen_loss=F.l1_loss, arch=arch, nf_factor=nf_factor
+        data=data, gen_loss=F.l1_loss, arch=arch, nf_factor=nf_factor,
+        norm_type=norm_type
     )
     learn.path = root_folder
     learn.load(weights_name)
@@ -94,14 +98,16 @@ def gen_inference_deep(
 
 
 def gen_learner_deep(
-    data: ImageDataBunch, gen_loss, arch=models.resnet34, nf_factor: float = 1.5
+    data: ImageDataBunch, gen_loss, arch=models.resnet34, nf_factor: float = 1.5,
+    norm_type: NormType = NormType.Spectral
 ) -> Learner:
     return unet_learner_deep(
         data,
         arch,
         wd=1e-3,
         blur=True,
-        norm_type=NormType.Spectral,
+        norm_type=norm_type, 
+        # not using batchnorm - no change 
         self_attention=True,
         y_range=(-3.0, 3.0),
         loss_func=gen_loss,
