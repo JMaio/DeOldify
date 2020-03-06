@@ -31,6 +31,7 @@ def custom_conv_layer(
     if padding is None:
         padding = (ks - 1) // 2 if not transpose else 0
     bn = norm_type in (NormType.Batch, NormType.BatchZero) or extra_bn == True
+    gn = norm_type == NormType.GroupNorm
     if bias is None:
         bias = not bn
     conv_func = nn.ConvTranspose2d if transpose else nn.Conv1d if is_1d else nn.Conv2d
@@ -42,7 +43,7 @@ def custom_conv_layer(
         conv = weight_norm(conv)
     elif norm_type == NormType.Spectral:
         conv = spectral_norm(conv)
-    elif norm_type == NormType.GroupNorm:
+    # elif norm_type == NormType.GroupNorm:
         # https://pytorch.org/docs/stable/nn.html#groupnorm
         # >>> input = torch.randn(20, 6, 10, 10)
         # >>> # Separate 6 channels into 3 groups
@@ -56,13 +57,15 @@ def custom_conv_layer(
         
         # "We set G = 32 for GN by default."" (Wu, He 2018 - Group Norm paper)
         # torch.nn.GroupNorm(num_groups, num_channels, eps=1e-05, affine=True)
-        group_norm = GroupNorm(32, 3)
-        conv = group_norm(conv)
+        # group_norm = GroupNorm(32, 3)
+        # conv = group_norm(conv)
     layers = [conv]
     if use_activ:
         layers.append(relu(True, leaky=leaky))
     if bn:
         layers.append((nn.BatchNorm1d if is_1d else nn.BatchNorm2d)(nf))
+    if gn:
+        layers.append(GroupNorm(nf, nf))
     if self_attention:
         layers.append(SelfAttention(nf))
     return nn.Sequential(*layers)
