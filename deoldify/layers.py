@@ -2,7 +2,11 @@ from fastai.layers import *
 from fastai.torch_core import *
 from torch.nn.parameter import Parameter
 from torch.autograd import Variable
+from torch.nn import GroupNorm
 
+# override NormTypes
+normtypes = [m.name for m in NormType] + ['GroupNorm']
+NormType = Enum('NormType', normtypes)
 
 # The code below is meant to be merged into fastaiv1 ideally
 
@@ -38,6 +42,22 @@ def custom_conv_layer(
         conv = weight_norm(conv)
     elif norm_type == NormType.Spectral:
         conv = spectral_norm(conv)
+    elif norm_type == NormType.Group:
+        # https://pytorch.org/docs/stable/nn.html#groupnorm
+        # >>> input = torch.randn(20, 6, 10, 10)
+        # >>> # Separate 6 channels into 3 groups
+        # >>> m = nn.GroupNorm(3, 6)
+        # >>> # Separate 6 channels into 6 groups (equivalent with InstanceNorm)
+        # >>> m = nn.GroupNorm(6, 6)
+        # >>> # Put all 6 channels into a single group (equivalent with LayerNorm)
+        # >>> m = nn.GroupNorm(1, 6)
+        # >>> # Activating the module
+        # >>> output = m(input)
+        
+        # "We set G = 32 for GN by default."" (Wu, He 2018 - Group Norm paper)
+        # torch.nn.GroupNorm(num_groups, num_channels, eps=1e-05, affine=True)
+        group_norm = GroupNorm(32, 3)
+        conv = group_norm(conv)
     layers = [conv]
     if use_activ:
         layers.append(relu(True, leaky=leaky))
