@@ -42,7 +42,7 @@ def custom_conv_layer(
         conv = weight_norm(conv)
     elif norm_type == NormType.Spectral:
         conv = spectral_norm(conv)
-    elif norm_type == NormType.Group:
+    elif norm_type == NormType.GroupNorm:
         # https://pytorch.org/docs/stable/nn.html#groupnorm
         # >>> input = torch.randn(20, 6, 10, 10)
         # >>> # Separate 6 channels into 3 groups
