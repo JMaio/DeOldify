@@ -5,7 +5,7 @@ from torch.autograd import Variable
 from torch.nn import GroupNorm
 
 # override NormTypes
-normtypes = [m.name for m in NormType] + ['GroupNorm']
+normtypes = [m.name for m in NormType] + ['LayerNorm', 'InstanceNorm', 'GroupNorm']
 NormType = Enum('NormType', normtypes)
 
 # The code below is meant to be merged into fastaiv1 ideally
@@ -39,33 +39,43 @@ def custom_conv_layer(
         conv_func(ni, nf, kernel_size=ks, bias=bias, stride=stride, padding=padding),
         init,
     )
-    if norm_type == NormType.Weight:
-        conv = weight_norm(conv)
-    elif norm_type == NormType.Spectral:
-        conv = spectral_norm(conv)
-    # elif norm_type == NormType.GroupNorm:
-        # https://pytorch.org/docs/stable/nn.html#groupnorm
-        # >>> input = torch.randn(20, 6, 10, 10)
-        # >>> # Separate 6 channels into 3 groups
-        # >>> m = nn.GroupNorm(3, 6)
-        # >>> # Separate 6 channels into 6 groups (equivalent with InstanceNorm)
-        # >>> m = nn.GroupNorm(6, 6)
-        # >>> # Put all 6 channels into a single group (equivalent with LayerNorm)
-        # >>> m = nn.GroupNorm(1, 6)
-        # >>> # Activating the module
-        # >>> output = m(input)
-        
-        # "We set G = 32 for GN by default."" (Wu, He 2018 - Group Norm paper)
-        # torch.nn.GroupNorm(num_groups, num_channels, eps=1e-05, affine=True)
-        # group_norm = GroupNorm(32, 3)
-        # conv = group_norm(conv)
+
+    # spectral norm by default
+    conv = spectral_norm(conv)
+
     layers = [conv]
     if use_activ:
         layers.append(relu(True, leaky=leaky))
-    if bn:
+
+    # elif norm_type == NormType.GroupNorm:
+    #     # https://pytorch.org/docs/stable/nn.html#groupnorm
+    #     # >>> input = torch.randn(20, 6, 10, 10)
+    #     # >>> # Separate 6 channels into 3 groups
+    #     # >>> m = nn.GroupNorm(3, 6)
+    #     # >>> # Separate 6 channels into 6 groups (equivalent with InstanceNorm)
+    #     # >>> m = nn.GroupNorm(6, 6)
+    #     # >>> # Put all 6 channels into a single group (equivalent with LayerNorm)
+    #     # >>> m = nn.GroupNorm(1, 6)
+    #     # >>> # Activating the module
+    #     # >>> output = m(input)
+        
+    #     # "We set G = 32 for GN by default."" (Wu, He 2018 - Group Norm paper)
+    #     # torch.nn.GroupNorm(num_groups, num_channels, eps=1e-05, affine=True)
+    #     group_norm = GroupNorm(32, 3)
+    #     conv = group_norm(conv)
+
+    if norm_type == NormType.Batch:
         layers.append((nn.BatchNorm1d if is_1d else nn.BatchNorm2d)(nf))
-    if gn:
+    elif norm_type == NormType.InstanceNorm:
         layers.append(GroupNorm(nf, nf))
+    elif norm_type == NormType.LayerNorm:
+        layers.append(GroupNorm(1, nf))
+    elif norm_type == NormType.GroupNorm:
+        # if channels is divisible by 32, split into
+        # 32 groups, otherwise, use simple grouping
+        gs = 32 if nf % 32 == 0 else 1
+        layers.append(GroupNorm(gs, nf))
+    
     if self_attention:
         layers.append(SelfAttention(nf))
     return nn.Sequential(*layers)
