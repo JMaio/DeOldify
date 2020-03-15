@@ -3,9 +3,10 @@ from fastai.torch_core import *
 from torch.nn.parameter import Parameter
 from torch.autograd import Variable
 from torch.nn import GroupNorm
+from .batch_renormalization import BatchRenormalization2D
 
 # override NormTypes
-normtypes = [m.name for m in NormType] + ['LayerNorm', 'InstanceNorm', 'GroupNorm']
+normtypes = [m.name for m in NormType] + ['LayerNorm', 'InstanceNorm', 'GroupNorm' , 'BatchRenorm']
 NormType = Enum('NormType', normtypes)
 
 # The code below is meant to be merged into fastaiv1 ideally
@@ -31,7 +32,7 @@ def custom_conv_layer(
     if padding is None:
         padding = (ks - 1) // 2 if not transpose else 0
     bn = norm_type in (NormType.Batch, NormType.BatchZero) or extra_bn == True
-    gn = norm_type == NormType.GroupNorm
+    # gn = norm_type == NormType.GroupNorm
     if bias is None:
         bias = not bn
     conv_func = nn.ConvTranspose2d if transpose else nn.Conv1d if is_1d else nn.Conv2d
@@ -75,7 +76,9 @@ def custom_conv_layer(
         # 32 groups, otherwise, use simple grouping
         gs = 32 if nf % 32 == 0 else 1
         layers.append(GroupNorm(gs, nf))
-    
+    elif norm_type == NormType.BatchRenorm:
+        layers.append(BatchRenormalization2D(nf))
+
     if self_attention:
         layers.append(SelfAttention(nf))
     return nn.Sequential(*layers)
