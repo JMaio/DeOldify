@@ -7,12 +7,11 @@ from .dataset import *
 
 # Weights are implicitly read from ./models/ folder
 def gen_inference_wide(
-    root_folder: Path, weights_name: str, nf_factor: int = 2, arch=models.resnet101,
-    norm_type: NormType = NormType.Spectral
+    root_folder: Path, weights_name: str, nf_factor: int = 2, arch=models.resnet101
 ) -> Learner:
     data = get_dummy_databunch()
     learn = gen_learner_wide(
-        data=data, gen_loss=F.l1_loss, nf_factor=nf_factor, arch=arch, norm_type=norm_type
+        data=data, gen_loss=F.l1_loss, nf_factor=nf_factor, arch=arch
     )
     learn.path = root_folder
     learn.load(weights_name)
