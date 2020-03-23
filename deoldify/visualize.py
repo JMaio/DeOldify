@@ -384,8 +384,10 @@ def get_stable_image_colorizer(
     weights_name: str = 'ColorizeStable_gen',
     results_dir='result_images',
     render_factor: int = 35,
+    norm_type: NormType = NormType.Spectral
+
 ) -> ModelImageVisualizer:
-    learn = gen_inference_wide(root_folder=root_folder, weights_name=weights_name)
+    learn = gen_inference_wide(root_folder=root_folder, weights_name=weights_name, norm_type=norm_type)
     filtr = MasterFilter([ColorizerFilter(learn=learn)], render_factor=render_factor)
     vis = ModelImageVisualizer(filtr, results_dir=results_dir)
     return vis
